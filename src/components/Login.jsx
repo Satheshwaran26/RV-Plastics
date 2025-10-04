@@ -8,6 +8,7 @@ import {
   LockClosedIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../contexts/AuthContext'
+import rv from '../assets/rv.mp4'
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -63,7 +64,7 @@ const Login = () => {
         loop
         className="absolute inset-0 w-full h-full object-cover z-0"
       >
-        <source src="/rv.mp4" type="video/mp4" />
+        <source src={rv} type="video/mp4" />
         Your browser does not support the video tag.
       </video>
       
