@@ -55,17 +55,30 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-slate-50 flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-6 md:space-y-8">
+    <div className="min-h-screen relative flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
+      {/* Video Background */}
+      <video
+        autoPlay
+        muted
+        loop
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      >
+        <source src="/rv.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+      
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black bg-opacity-50 z-10"></div>
+      <div className="max-w-md w-full space-y-6 md:space-y-8 relative z-20">
         {/* Header */}
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+          <div className="mx-auto h-16 w-16 bg-black rounded-xl flex items-center justify-center shadow-lg">
             <BuildingOfficeIcon className="h-10 w-10 text-white" />
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
+          <h2 className="mt-6 text-3xl font-bold text-white">
             Welcome Back
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-200">
             Sign in to your RV Plastics account
           </p>
         </div>
@@ -151,9 +164,7 @@ const Login = () => {
                 </label>
               </div>
               <div className="text-sm">
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200">
-                  Forgot password?
-                </a>
+               
               </div>
             </div>
 
@@ -162,7 +173,7 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 {isLoading ? (
                   <div className="flex items-center">
@@ -175,25 +186,19 @@ const Login = () => {
               </button>
             </div>
           </form>
-
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Demo Credentials:</h3>
-            <div className="text-xs text-gray-600 space-y-1">
-              <p><strong>Username:</strong> admin</p>
-              <p><strong>Password:</strong> password123</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center">
+          <div className="text-center mt-10 border-t border-gray-200 pt-4">
           <p className="text-xs text-gray-500">
             © 2024 RV Plastics. All rights reserved.
           </p>
         </div>
+         
+          </div> 
+        </div>
+
+        {/* Footer */}
+       
       </div>
-    </div>
+
   )
 }
 
