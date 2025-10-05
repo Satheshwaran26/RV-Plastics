@@ -180,49 +180,48 @@ const BuyerData = () => {
               <div
                 key={buyer.id}
                 onClick={() => setSelectedBuyer(buyer)}
-                className="group bg-white border border-gray-200 rounded-xl p-4 md:p-6 cursor-pointer hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 hover:border-gray-300 hover:-translate-y-1"
+                className="group bg-white border border-gray-200 rounded-lg p-3 cursor-pointer hover:shadow-lg hover:shadow-gray-200/40 transition-all duration-200 hover:border-gray-300 hover:-translate-y-0.5"
               >
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                  <div className="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center group-hover:from-slate-200 group-hover:to-slate-300 transition-all duration-300">
-                    <span className="text-slate-700 font-bold text-lg">{buyer.name.charAt(0)}</span>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center group-hover:from-blue-200 group-hover:to-blue-300 transition-all duration-200">
+                    <span className="text-blue-700 font-bold text-sm">{buyer.name.charAt(0)}</span>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-gray-500 font-medium">ID #{buyer.id}</div>
-                    <div className="text-xs text-gray-400">Buyer</div>
+                    <div className="text-xs text-gray-500 font-medium">#{buyer.id}</div>
                   </div>
                 </div>
 
                 {/* Name */}
-                <div className="mb-6">
-                  <h3 className="font-semibold text-gray-900 text-lg group-hover:text-slate-800 transition-colors duration-200">{buyer.name}</h3>
+                <div className="mb-3">
+                  <h3 className="font-medium text-gray-900 text-lg group-hover:text-gray-800 transition-colors duration-200 truncate">{buyer.name}</h3>
                 </div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  <div className="bg-slate-50 rounded-lg p-3 group-hover:bg-slate-100 transition-colors duration-200">
-                    <div className="text-xs text-gray-500 font-medium mb-1">Weight</div>
+                {/* Stats Grid - Compact */}
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div className="bg-gray-50 rounded-md p-2 group-hover:bg-gray-100 transition-colors duration-200">
+                    <div className="text-xs text-gray-500 font-medium">Weight</div>
                     <div className="text-sm font-bold text-gray-900">{buyer.totalWeight} kg</div>
                   </div>
-                  <div className="bg-red-50 rounded-lg p-3 group-hover:bg-red-100 transition-colors duration-200">
-                    <div className="text-xs text-red-600 font-medium mb-1">Debit</div>
+                  <div className="bg-red-50 rounded-md p-2 group-hover:bg-red-100 transition-colors duration-200">
+                    <div className="text-xs text-red-600 font-medium">Debit</div>
                     <div className="text-sm font-bold text-red-800">₹{buyer.totalDebit.toLocaleString()}</div>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-3 group-hover:bg-green-100 transition-colors duration-200">
-                    <div className="text-xs text-green-600 font-medium mb-1">Credit</div>
+                  <div className="bg-green-50 rounded-md p-2 group-hover:bg-green-100 transition-colors duration-200">
+                    <div className="text-xs text-green-600 font-medium">Credit</div>
                     <div className="text-sm font-bold text-green-800">₹{buyer.totalCredit.toLocaleString()}</div>
                   </div>
-                  <div className="bg-blue-50 rounded-lg p-3 group-hover:bg-blue-100 transition-colors duration-200">
-                    <div className="text-xs text-blue-600 font-medium mb-1">Balance</div>
+                  <div className="bg-blue-50 rounded-md p-2 group-hover:bg-blue-100 transition-colors duration-200">
+                    <div className="text-xs text-blue-600 font-medium">Balance</div>
                     <div className="text-sm font-bold text-blue-800">₹{buyer.balance.toLocaleString()}</div>
                   </div>
                 </div>
 
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                {/* Footer - Compact */}
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                   <span className="text-xs text-gray-500 font-medium">View Details</span>
-                  <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-gray-200 transition-colors duration-200">
-                    <svg className="w-3 h-3 text-gray-600 group-hover:text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-gray-200 transition-colors duration-200">
+                    <svg className="w-2.5 h-2.5 text-gray-600 group-hover:text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </div>

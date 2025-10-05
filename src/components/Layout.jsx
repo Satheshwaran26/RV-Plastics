@@ -28,12 +28,14 @@ const Layout = ({ children }) => {
   const currentPage = getCurrentPage()
 
   return (
-    <div className="min-h-screen bg-white text-black font-poppins flex flex-col">
-      {/* Full width navbar at top */}
-      <Navbar 
-        setSidebarOpen={setSidebarOpen}
-        sidebarOpen={sidebarOpen}
-      />
+    <div className="h-screen bg-white text-black font-poppins flex flex-col overflow-hidden">
+      {/* Fixed navbar at top */}
+      <div className="flex-shrink-0">
+        <Navbar 
+          setSidebarOpen={setSidebarOpen}
+          sidebarOpen={sidebarOpen}
+        />
+      </div>
       
       {/* Content area with sidebar and main content */}
       <div className="flex flex-1 overflow-hidden">
@@ -42,7 +44,7 @@ const Layout = ({ children }) => {
           isOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
-        <main className="flex-1 overflow-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6">
           {children}
         </main>
       </div>

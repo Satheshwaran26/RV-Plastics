@@ -12,7 +12,7 @@ const Navbar = ({ setSidebarOpen, sidebarOpen }) => {
   const { user, logout } = useAuth()
 
   return (
-    <header className="w-full bg-white border-b border-gray-200 px-4 md:pl-5 md:pr-8 py-4 font-poppins">
+    <header className="w-full bg-white border-b border-gray-200 px-4 md:pl-5 md:pr-8 py-4 font-poppins flex-shrink-0">
       <div className="flex items-center justify-between w-full">
         {/* Left side - Mobile menu button and Logo */}
         <div className="flex items-center space-x-3">

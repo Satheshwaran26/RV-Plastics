@@ -51,7 +51,7 @@ const Sidebar = ({ activePage, isOpen, setSidebarOpen }) => {
       
       {/* Sidebar */}
       <div className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 font-poppins shadow-sm flex flex-col transform transition-transform duration-300 ease-in-out
+        fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 font-poppins shadow-sm flex flex-col transform transition-transform duration-300 ease-in-out overflow-hidden
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Mobile Close Button */}
@@ -65,7 +65,7 @@ const Sidebar = ({ activePage, isOpen, setSidebarOpen }) => {
         </div>
 
         {/* Navigation */}
-        <nav className="mt-4 lg:mt-8 px-4 flex-1">
+        <nav className="mt-4 lg:mt-8 px-4 flex-1 overflow-y-auto">
           <ul className="space-y-2">
             {menuItems.map((item) => {
               const Icon = item.icon
