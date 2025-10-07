@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { 
   PlusIcon,
   CheckIcon,
-  UserIcon
+  UserIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 
 const AddBuyer = () => {
@@ -18,6 +19,11 @@ const AddBuyer = () => {
   })
   const [showSuccess, setShowSuccess] = useState(false)
   const [transactionHistory, setTransactionHistory] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  // Google Apps Script URL
+  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx89vJ41DN0_1u-qxngjETha-YUu3oWddvgi9aF74uyFBnRuYIu7hTj6e5VS7jTMHwa/exec'
 
   const transactionTypes = ['SALES', 'RECEIPT']
 
@@ -47,35 +53,98 @@ const AddBuyer = () => {
     })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     
-    const transaction = {
-      id: Date.now(),
-      date: new Date().toLocaleDateString('en-GB'),
-      buyerName: formData.buyerName,
-      particulars: formData.transactionType,
-      weight: formData.transactionType === 'SALES' ? formData.weight : '',
-      inrPerKg: formData.transactionType === 'SALES' ? formData.inrPerKg : '',
-      autoRent: formData.autoRent || '',
-      debit: formData.transactionType === 'SALES' ? formData.debit : '',
-      credit: formData.transactionType === 'RECEIPT' ? formData.credit : '',
-      balance: 0 // This would be calculated based on previous balance
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Calculate the next serial number
+      const nextSno = transactionHistory.length + 1
+      
+      // Calculate balance (simplified calculation)
+      const currentBalance = 0
+      const newBalance = currentBalance + (parseFloat(formData.debit) || 0) - (parseFloat(formData.credit) || 0)
+      
+      const transaction = {
+        sno: nextSno,
+        date: new Date().toLocaleDateString('en-GB'),
+        particulars: formData.transactionType,
+        weight: formData.transactionType === 'SALES' ? formData.weight : '',
+        inrkg: formData.transactionType === 'SALES' ? formData.inrPerKg : '',
+        autorent: formData.autoRent || '',
+        debit: formData.transactionType === 'SALES' ? formData.debit : '',
+        credit: formData.transactionType === 'RECEIPT' ? formData.credit : '',
+        bal: newBalance
+      }
+      
+      // Send to Google Sheets using JSONP to avoid CORS issues
+      const result = await new Promise((resolve, reject) => {
+        const callbackName = `handleAddBuyerResult_${Date.now()}`
+        
+        // Create the transaction data as URL parameters
+        const params = new URLSearchParams({
+          action: 'addTransaction',
+          buyerName: formData.buyerName,
+          callback: callbackName,
+          ...transaction
+        })
+        
+        // Create script tag for JSONP
+        const script = document.createElement('script')
+        script.src = `${GOOGLE_SCRIPT_URL}?${params.toString()}`
+        
+        script.onerror = () => {
+          reject(new Error('Failed to add transaction'))
+          document.head.removeChild(script)
+        }
+        
+        // Global callback function
+        window[callbackName] = (data) => {
+          resolve(data)
+          document.head.removeChild(script)
+          delete window[callbackName]
+        }
+        
+        document.head.appendChild(script)
+      })
+      
+      if (result.success) {
+        console.log('Transaction added to Google Sheets:', result)
+        
+        // Add to local history for immediate display
+        setTransactionHistory(prev => [...prev, {
+          id: Date.now(),
+          date: transaction.date,
+          buyerName: formData.buyerName,
+          particulars: transaction.particulars,
+          weight: transaction.weight,
+          debit: transaction.debit,
+          credit: transaction.credit
+        }])
+        
+        setShowSuccess(true)
+        setFormData({
+          buyerName: '',
+          transactionType: 'SALES',
+          weight: '',
+          inrPerKg: '95',
+          autoRent: '',
+          debit: '',
+          credit: '',
+          particulars: 'SALES'
+        })
+        setTimeout(() => setShowSuccess(false), 3000)
+      } else {
+        throw new Error(result.error || 'Failed to add transaction')
+      }
+    } catch (error) {
+      console.error('Error adding transaction:', error)
+      setError(`Failed to add transaction: ${error.message}`)
+    } finally {
+      setLoading(false)
     }
-    
-    setTransactionHistory(prev => [...prev, transaction])
-    setShowSuccess(true)
-    setFormData({
-      buyerName: '',
-      transactionType: 'SALES',
-      weight: '',
-      inrPerKg: '95',
-      autoRent: '',
-      debit: '',
-      credit: '',
-      particulars: 'SALES'
-    })
-    setTimeout(() => setShowSuccess(false), 3000)
   }
 
   const clearForm = () => {
@@ -104,6 +173,14 @@ const AddBuyer = () => {
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center">
           <CheckIcon className="w-5 h-5 text-green-600 mr-2" />
           <span className="text-green-800 font-medium">Transaction added successfully!</span>
+        </div>
+      )}
+
+      {/* Error message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center">
+          <XMarkIcon className="w-5 h-5 text-red-600 mr-2" />
+          <span className="text-red-800 font-medium">{error}</span>
         </div>
       )}
 
@@ -254,10 +331,23 @@ const AddBuyer = () => {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center"
+                disabled={loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <PlusIcon className="w-4 h-4 mr-2" />
-                Add Transaction
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <PlusIcon className="w-4 h-4 mr-2" />
+                    Add Transaction
+                  </>
+                )}
               </button>
             </div>
           </form>

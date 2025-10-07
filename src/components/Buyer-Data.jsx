@@ -1,142 +1,392 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   XMarkIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const BuyerData = () => {
   const [selectedBuyer, setSelectedBuyer] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [buyers, setBuyers] = useState([])
+  const [buyerTransactions, setBuyerTransactions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [pdfGenerating, setPdfGenerating] = useState(false)
 
-  const buyers = [
-    { id: 1, name: 'Rajesh Kumar', totalWeight: 420.3, totalDebit: 39952.5, totalCredit: 59213, balance: 28006.5 },
-    { id: 2, name: 'Priya Sharma', totalWeight: 447.5, totalDebit: 42512.5, totalCredit: 35000, balance: 7512.5 },
-    { id: 3, name: 'Amit Patel', totalWeight: 591.4, totalDebit: 56163, totalCredit: 43000, balance: 13163 },
-    { id: 4, name: 'Sunita Singh', totalWeight: 324.6, totalDebit: 30837, totalCredit: 0, balance: 65512 },
-    { id: 5, name: 'Vikram Gupta', totalWeight: 360.2, totalDebit: 34219, totalCredit: 0, balance: 82735.5 },
-    { id: 6, name: 'Neha Agarwal', totalWeight: 233.5, totalDebit: 22182, totalCredit: 0, balance: 90022 },
-    { id: 7, name: 'Ravi Verma', totalWeight: 232.9, totalDebit: 22125.5, totalCredit: 0, balance: 97261 },
-    { id: 8, name: 'Kavita Joshi', totalWeight: 309.9, totalDebit: 29440.5, totalCredit: 0, balance: 117325 },
-    { id: 9, name: 'Suresh Reddy', totalWeight: 291.6, totalDebit: 27702, totalCredit: 0, balance: 124953.5 },
-    { id: 10, name: 'Anita Desai', totalWeight: 356.3, totalDebit: 33848.5, totalCredit: 0, balance: 146005.5 },
-    { id: 11, name: 'Manoj Tiwari', totalWeight: 357.0, totalDebit: 33915, totalCredit: 0, balance: 156750 },
-    { id: 12, name: 'Deepa Iyer', totalWeight: 269.4, totalDebit: 25592, totalCredit: 0, balance: 166449.5 },
-    { id: 13, name: 'Rohit Nair', totalWeight: 324.3, totalDebit: 30808.5, totalCredit: 0, balance: 178058.5 },
-    { id: 14, name: 'Shilpa Rao', totalWeight: 306.2, totalDebit: 29089, totalCredit: 0, balance: 193296.5 },
-    { id: 15, name: 'Arjun Mehta', totalWeight: 311.7, totalDebit: 29611.5, totalCredit: 0, balance: 202863 },
-    { id: 16, name: 'Pooja Shah', totalWeight: 336.3, totalDebit: 31948.5, totalCredit: 0, balance: 218861 },
-    { id: 17, name: 'Kiran Malhotra', totalWeight: 200.2, totalDebit: 19019, totalCredit: 0, balance: 225083.5 },
-    { id: 18, name: 'Nitin Chopra', totalWeight: 310.4, totalDebit: 29488, totalCredit: 0, balance: 243855.5 },
-    { id: 19, name: 'Rekha Jain', totalWeight: 222.2, totalDebit: 21109, totalCredit: 0, balance: 251161 },
-    { id: 20, name: 'Gaurav Saxena', totalWeight: 366.1, totalDebit: 34779.5, totalCredit: 0, balance: 276583 }
-  ]
+  // Your actual Google Apps Script URL
+  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx89vJ41DN0_1u-qxngjETha-YUu3oWddvgi9aF74uyFBnRuYIu7hTj6e5VS7jTMHwa/exec'
 
-  const buyerTransactions = {
-    1: [
-      { date: '11.01.2025', particulars: 'SALES', weight: 108.2, inrPerKg: 95, autoRent: '', debit: 10279, credit: '', balance: 10279 },
-      { date: '24.01.2025', particulars: 'RECEIPT', weight: '', inrPerKg: '', autoRent: '', debit: '', credit: 16213, balance: 9978.5 },
-      { date: '15.01.2025', particulars: 'SALES', weight: 75.5, inrPerKg: 95, autoRent: '', debit: 7162.5, credit: '', balance: 17141 },
-      { date: '05.02.2025', particulars: 'RECEIPT', weight: '', inrPerKg: '', autoRent: '', debit: '', credit: 28000, balance: 10934.5 },
-      { date: '20.01.2025', particulars: 'SALES', weight: 92.3, inrPerKg: 95, autoRent: '', debit: 8768.5, credit: '', balance: 19703 },
-      { date: '12.02.2025', particulars: 'SALES', weight: 88.6, inrPerKg: 95, autoRent: '', debit: 8417, credit: '', balance: 28120 },
-      { date: '18.02.2025', particulars: 'RECEIPT', weight: '', inrPerKg: '', autoRent: '', debit: '', credit: 15000, balance: 13120 },
-      { date: '25.02.2025', particulars: 'SALES', weight: 156.7, inrPerKg: 95, autoRent: '', debit: 14886.5, credit: '', balance: 28006.5 }
-    ],
-    2: [
-      { date: '24.01.2025', particulars: 'SALES', weight: 167.5, inrPerKg: 95, autoRent: '', debit: 15912.5, credit: '', balance: 15912.5 },
-      { date: '28.01.2025', particulars: 'SALES', weight: 134.2, inrPerKg: 95, autoRent: '', debit: 12749, credit: '', balance: 28661.5 },
-      { date: '15.02.2025', particulars: 'RECEIPT', weight: '', inrPerKg: '', autoRent: '', debit: '', credit: 20000, balance: 8661.5 },
-      { date: '20.02.2025', particulars: 'SALES', weight: 145.8, inrPerKg: 95, autoRent: '', debit: 13851, credit: '', balance: 22512.5 },
-      { date: '25.02.2025', particulars: 'RECEIPT', weight: '', inrPerKg: '', autoRent: '', debit: '', credit: 15000, balance: 7512.5 }
-    ],
-    3: [
-      { date: '15.01.2025', particulars: 'SALES', weight: 89.3, inrPerKg: 95, autoRent: '', debit: 8483.5, credit: '', balance: 8483.5 },
-      { date: '18.01.2025', particulars: 'SALES', weight: 112.7, inrPerKg: 95, autoRent: '', debit: 10706.5, credit: '', balance: 19190 },
-      { date: '25.01.2025', particulars: 'SALES', weight: 98.4, inrPerKg: 95, autoRent: '', debit: 9348, credit: '', balance: 28538 },
-      { date: '30.01.2025', particulars: 'RECEIPT', weight: '', inrPerKg: '', autoRent: '', debit: '', credit: 25000, balance: 3538 },
-      { date: '05.02.2025', particulars: 'SALES', weight: 156.2, inrPerKg: 95, autoRent: '', debit: 14839, credit: '', balance: 18377 },
-      { date: '10.02.2025', particulars: 'RECEIPT', weight: '', inrPerKg: '', autoRent: '', debit: '', credit: 18000, balance: 377 },
-      { date: '15.02.2025', particulars: 'SALES', weight: 134.8, inrPerKg: 95, autoRent: '', debit: 12786, credit: '', balance: 13163 }
-    ],
-    4: [
-      { date: '18.01.2025', particulars: 'SALES', weight: 145.7, inrPerKg: 95, autoRent: '', debit: 13841.5, credit: '', balance: 48516.5 },
-      { date: '22.01.2025', particulars: 'SALES', weight: 178.9, inrPerKg: 95, autoRent: '', debit: 16995.5, credit: '', balance: 65512 }
-    ],
-    5: [
-      { date: '22.01.2025', particulars: 'SALES', weight: 203.4, inrPerKg: 95, autoRent: '', debit: 19323, credit: '', balance: 67839.5 },
-      { date: '26.01.2025', particulars: 'SALES', weight: 156.8, inrPerKg: 95, autoRent: '', debit: 14896, credit: '', balance: 82735.5 }
-    ],
-    6: [
-      { date: '12.01.2025', particulars: 'SALES', weight: 76.8, inrPerKg: 95, autoRent: '', debit: 7296, credit: '', balance: 75135.5 },
-      { date: '16.01.2025', particulars: 'SALES', weight: 89.2, inrPerKg: 95, autoRent: '', debit: 8474, credit: '', balance: 83609.5 },
-      { date: '23.01.2025', particulars: 'SALES', weight: 67.5, inrPerKg: 95, autoRent: '', debit: 6412.5, credit: '', balance: 90022 }
-    ],
-    7: [
-      { date: '14.01.2025', particulars: 'SALES', weight: 134.2, inrPerKg: 95, autoRent: '', debit: 12749, credit: '', balance: 87884.5 },
-      { date: '19.01.2025', particulars: 'SALES', weight: 98.7, inrPerKg: 95, autoRent: '', debit: 9376.5, credit: '', balance: 97261 }
-    ],
-    8: [
-      { date: '13.01.2025', particulars: 'SALES', weight: 98.6, inrPerKg: 95, autoRent: '', debit: 9367, credit: '', balance: 97251.5 },
-      { date: '17.01.2025', particulars: 'SALES', weight: 123.4, inrPerKg: 95, autoRent: '', debit: 11723, credit: '', balance: 108974.5 },
-      { date: '21.01.2025', particulars: 'SALES', weight: 87.9, inrPerKg: 95, autoRent: '', debit: 8350.5, credit: '', balance: 117325 }
-    ],
-    9: [
-      { date: '16.01.2025', particulars: 'SALES', weight: 156.9, inrPerKg: 95, autoRent: '', debit: 14905.5, credit: '', balance: 112157 },
-      { date: '20.01.2025', particulars: 'SALES', weight: 134.7, inrPerKg: 95, autoRent: '', debit: 12796.5, credit: '', balance: 124953.5 }
-    ],
-    10: [
-      { date: '17.01.2025', particulars: 'SALES', weight: 112.4, inrPerKg: 95, autoRent: '', debit: 10678, credit: '', balance: 122835 },
-      { date: '24.01.2025', particulars: 'SALES', weight: 145.6, inrPerKg: 95, autoRent: '', debit: 13832, credit: '', balance: 136667 },
-      { date: '29.01.2025', particulars: 'SALES', weight: 98.3, inrPerKg: 95, autoRent: '', debit: 9338.5, credit: '', balance: 146005.5 }
-    ],
-    11: [
-      { date: '19.01.2025', particulars: 'SALES', weight: 189.7, inrPerKg: 95, autoRent: '', debit: 18021.5, credit: '', balance: 140856.5 },
-      { date: '25.01.2025', particulars: 'SALES', weight: 167.3, inrPerKg: 95, autoRent: '', debit: 15893.5, credit: '', balance: 156750 }
-    ],
-    12: [
-      { date: '18.01.2025', particulars: 'SALES', weight: 67.3, inrPerKg: 95, autoRent: '', debit: 6393.5, credit: '', balance: 147250 },
-      { date: '22.01.2025', particulars: 'SALES', weight: 89.7, inrPerKg: 95, autoRent: '', debit: 8521.5, credit: '', balance: 155771.5 },
-      { date: '27.01.2025', particulars: 'SALES', weight: 112.4, inrPerKg: 95, autoRent: '', debit: 10678, credit: '', balance: 166449.5 }
-    ],
-    13: [
-      { date: '20.01.2025', particulars: 'SALES', weight: 178.5, inrPerKg: 95, autoRent: '', debit: 16957.5, credit: '', balance: 164207.5 },
-      { date: '26.01.2025', particulars: 'SALES', weight: 145.8, inrPerKg: 95, autoRent: '', debit: 13851, credit: '', balance: 178058.5 }
-    ],
-    14: [
-      { date: '21.01.2025', particulars: 'SALES', weight: 95.2, inrPerKg: 95, autoRent: '', debit: 9044, credit: '', balance: 173251.5 },
-      { date: '25.01.2025', particulars: 'SALES', weight: 123.6, inrPerKg: 95, autoRent: '', debit: 11742, credit: '', balance: 184993.5 },
-      { date: '30.01.2025', particulars: 'SALES', weight: 87.4, inrPerKg: 95, autoRent: '', debit: 8303, credit: '', balance: 193296.5 }
-    ],
-    15: [
-      { date: '22.01.2025', particulars: 'SALES', weight: 143.8, inrPerKg: 95, autoRent: '', debit: 13661, credit: '', balance: 186912.5 },
-      { date: '28.01.2025', particulars: 'SALES', weight: 167.9, inrPerKg: 95, autoRent: '', debit: 15950.5, credit: '', balance: 202863 }
-    ],
-    16: [
-      { date: '23.01.2025', particulars: 'SALES', weight: 201.6, inrPerKg: 95, autoRent: '', debit: 19152, credit: '', balance: 206064.5 },
-      { date: '27.01.2025', particulars: 'SALES', weight: 134.7, inrPerKg: 95, autoRent: '', debit: 12796.5, credit: '', balance: 218861 }
-    ],
-    17: [
-      { date: '24.01.2025', particulars: 'SALES', weight: 87.4, inrPerKg: 95, autoRent: '', debit: 8303, credit: '', balance: 214367.5 },
-      { date: '29.01.2025', particulars: 'SALES', weight: 112.8, inrPerKg: 95, autoRent: '', debit: 10716, credit: '', balance: 225083.5 }
-    ],
-    18: [
-      { date: '25.01.2025', particulars: 'SALES', weight: 165.1, inrPerKg: 95, autoRent: '', debit: 15684.5, credit: '', balance: 230052 },
-      { date: '30.01.2025', particulars: 'SALES', weight: 145.3, inrPerKg: 95, autoRent: '', debit: 13803.5, credit: '', balance: 243855.5 }
-    ],
-    19: [
-      { date: '26.01.2025', particulars: 'SALES', weight: 123.7, inrPerKg: 95, autoRent: '', debit: 11751.5, credit: '', balance: 241803.5 },
-      { date: '31.01.2025', particulars: 'SALES', weight: 98.5, inrPerKg: 95, autoRent: '', debit: 9357.5, credit: '', balance: 251161 }
-    ],
-    20: [
-      { date: '27.01.2025', particulars: 'SALES', weight: 198.3, inrPerKg: 95, autoRent: '', debit: 18838.5, credit: '', balance: 260642 },
-      { date: '01.02.2025', particulars: 'SALES', weight: 167.8, inrPerKg: 95, autoRent: '', debit: 15941, credit: '', balance: 276583 }
-    ]
-  }
+  // Test Google Apps Script connection first
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        console.log('Testing Google Apps Script connection...')
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=buyers`)
+        const data = await response.text()
+        console.log('Raw response:', data)
+        
+        // Try to parse as JSON
+        try {
+          const jsonData = JSON.parse(data)
+          console.log('Parsed JSON:', jsonData)
+        } catch (parseError) {
+          console.log('Response is not JSON, might be HTML or other format')
+        }
+      } catch (error) {
+        console.error('Connection test failed:', error)
+      }
+    }
+    
+    testConnection()
+  }, [])
+
+  // Fetch buyers from Google Sheets using JSONP
+  useEffect(() => {
+    const fetchBuyers = () => {
+      try {
+        setLoading(true)
+        console.log('Fetching from Google Sheets using JSONP')
+        
+        // Create a unique callback function name
+        const callbackName = `handleBuyersData_${Date.now()}`
+        
+        // Create script tag for JSONP
+        const script = document.createElement('script')
+        script.src = `${GOOGLE_SCRIPT_URL}?action=buyers&callback=${callbackName}`
+        
+        script.onerror = async () => {
+          console.error('JSONP fetch failed, trying regular fetch')
+          
+          // Try regular fetch as fallback
+          try {
+            const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=buyers`)
+            const data = await response.json()
+            console.log('Regular fetch successful:', data)
+            console.log('Regular fetch data type:', typeof data)
+            console.log('Regular fetch data length:', data?.length)
+            console.log('Regular fetch data error:', data?.error)
+            
+            if (data && !data.error && data.length > 0) {
+              console.log('Setting buyers data from regular fetch:', data)
+              setBuyers(data)
+            } else {
+              console.log('Regular fetch: No valid data received')
+              console.log('Regular fetch reason: data=', data, 'error=', data?.error, 'length=', data?.length)
+              throw new Error('No valid data received')
+            }
+          } catch (fetchError) {
+            console.error('Regular fetch also failed:', fetchError)
+            setError('Failed to connect to Google Sheets')
+            
+            // No fallback data - show empty state
+            setBuyers([])
+          }
+          setLoading(false)
+          document.head.removeChild(script)
+        }
+        
+        // Global callback function
+        window[callbackName] = (data) => {
+          console.log('Fetched data from Google Sheets:', data)
+          console.log('Data type:', typeof data)
+          console.log('Data length:', data?.length)
+          console.log('Data error:', data?.error)
+          
+          if (data && !data.error && data.length > 0) {
+            console.log('Setting buyers data:', data)
+            setBuyers(data)
+          } else {
+            console.log('No data from Google Sheets, showing empty state')
+            console.log('Reason: data=', data, 'error=', data?.error, 'length=', data?.length)
+            // No fallback data - show empty state
+            setBuyers([])
+          }
+          setLoading(false)
+          document.head.removeChild(script)
+          delete window[callbackName]
+        }
+        
+        document.head.appendChild(script)
+      } catch (err) {
+        console.error('Error setting up JSONP:', err)
+        setError(`Failed to connect to Google Sheets: ${err.message}`)
+        setLoading(false)
+      }
+    }
+
+    fetchBuyers()
+  }, [])
+
+  // Fetch transactions from Google Sheets using JSONP
+  useEffect(() => {
+    if (selectedBuyer) {
+      const fetchTransactions = () => {
+        try {
+          setLoading(true)
+          console.log('Fetching transactions for:', selectedBuyer.name)
+          
+          // Create a unique callback function name
+          const callbackName = `handleTransactionsData_${Date.now()}`
+          
+          // Create script tag for JSONP
+          const script = document.createElement('script')
+          script.src = `${GOOGLE_SCRIPT_URL}?action=transactions&buyerName=${encodeURIComponent(selectedBuyer.name)}&callback=${callbackName}`
+          
+          script.onerror = async () => {
+            console.error('JSONP fetch failed for transactions, trying regular fetch')
+            
+            // Try regular fetch as fallback
+            try {
+              const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=transactions&buyerName=${encodeURIComponent(selectedBuyer.name)}`)
+              const data = await response.json()
+              console.log('Regular fetch for transactions successful:', data)
+              
+              if (data && !data.error && data.length > 0) {
+                setBuyerTransactions(data)
+              } else {
+                throw new Error('No valid transaction data received')
+              }
+            } catch (fetchError) {
+              console.error('Regular fetch for transactions also failed, using fallback data:', fetchError)
+              
+              // No fallback data - show empty state
+              setBuyerTransactions([])
+            }
+            setLoading(false)
+            document.head.removeChild(script)
+          }
+          
+          // Global callback function
+          window[callbackName] = (data) => {
+            console.log('Fetched transactions from Google Sheets:', data)
+            if (data && !data.error && data.length > 0) {
+              setBuyerTransactions(data)
+            } else {
+              console.log('No transaction data from Google Sheets, showing empty state')
+              // No fallback data - show empty state
+              setBuyerTransactions([])
+            }
+            setLoading(false)
+            document.head.removeChild(script)
+            delete window[callbackName]
+          }
+          
+          document.head.appendChild(script)
+        } catch (err) {
+          console.error('Error setting up JSONP for transactions:', err)
+          setError('Failed to fetch transactions from Google Sheets')
+          setLoading(false)
+        }
+      }
+
+      fetchTransactions()
+    }
+  }, [selectedBuyer])
+
+
 
   // Filter buyers based on search term
   const filteredBuyers = buyers.filter(buyer =>
     buyer.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  // Generate PDF for buyer
+  const generatePDF = async (buyer) => {
+    setPdfGenerating(true)
+    const doc = new jsPDF()
+    
+    // Company Header
+    doc.setFontSize(20)
+    doc.setFont('helvetica', 'bold')
+    doc.text('RV PLASTICS', 105, 20, { align: 'center' })
+    
+    // Company Address (optional)
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Buyer Transaction Report', 105, 30, { align: 'center' })
+    
+    // Buyer Information
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    doc.text(`Buyer: ${buyer.name}`, 20, 50)
+    
+    // Buyer Summary
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Total Weight: ${buyer.totalweight || buyer.totalWeight} kg`, 20, 65)
+    doc.text(`Total Debit: ₹${(buyer.totaldebit || buyer.totalDebit)?.toLocaleString()}`, 20, 75)
+    doc.text(`Total Credit: ₹${(buyer.totalcredit || buyer.totalCredit)?.toLocaleString()}`, 20, 85)
+    doc.text(`Balance: ₹${buyer.balance?.toLocaleString()}`, 20, 95)
+    
+    // Fetch transactions if not already loaded for this buyer
+    let transactionsToUse = buyerTransactions
+    if (!transactionsToUse || transactionsToUse.length === 0 || selectedBuyer?.name !== buyer.name) {
+      try {
+        console.log('Fetching transactions for PDF generation:', buyer.name)
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=transactions&buyerName=${encodeURIComponent(buyer.name)}`)
+        const data = await response.json()
+        if (data && !data.error && data.length > 0) {
+          transactionsToUse = data
+          console.log('Fetched transactions for PDF:', transactionsToUse)
+        }
+      } catch (error) {
+        console.error('Error fetching transactions for PDF:', error)
+        transactionsToUse = []
+      }
+    }
+    
+    // Transaction Table
+    if (transactionsToUse && transactionsToUse.length > 0) {
+      console.log('Transaction data for PDF:', transactionsToUse[0]) // Debug first transaction
+      const tableData = transactionsToUse.map(transaction => [
+        transaction.sno || '',
+        transaction.date || '',
+        transaction.particulars || '',
+        transaction.weight || '',
+        transaction.particulars === 'RECEIPT' ? '' : (transaction.inrkg || transaction.inrPerKg || transaction.inr_per_kg || '95'),
+        transaction.autorent || transaction.autoRent || transaction.auto_rent || '',
+        transaction.debit || '',
+        transaction.credit || '',
+        transaction.bal || transaction.balance || ''
+      ])
+      
+      // Add total row
+      const totalRow = [
+        '',
+        '',
+        'TOTAL',
+        `${transactionsToUse.reduce((sum, transaction) => sum + (parseFloat(transaction.weight) || 0), 0).toFixed(1)} kg`,
+        '-',
+        transactionsToUse.reduce((sum, transaction) => sum + (parseFloat(transaction.autorent || transaction.autoRent) || 0), 0).toFixed(1),
+        `₹${transactionsToUse.reduce((sum, transaction) => sum + (parseFloat(transaction.debit) || 0), 0).toLocaleString()}`,
+        `₹${transactionsToUse.reduce((sum, transaction) => sum + (parseFloat(transaction.credit) || 0), 0).toLocaleString()}`,
+        `₹${buyer.balance?.toLocaleString()}`
+      ]
+      
+      tableData.push(totalRow)
+      
+      autoTable(doc, {
+        head: [['S.NO', 'DATE', 'PARTICULARS', 'WEIGHT', 'INR/kg', 'AUTO RENT', 'DEBIT', 'CREDIT', 'BAL']],
+        body: tableData,
+        startY: 110,
+        styles: {
+          fontSize: 7,
+          cellPadding: 1,
+          lineColor: [0, 0, 0],
+          lineWidth: 0.5,
+          halign: 'left',
+          valign: 'middle',
+          overflow: 'linebreak'
+        },
+        headStyles: {
+          fillColor: [220, 220, 220],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold',
+          fontSize: 7,
+          lineColor: [0, 0, 0],
+          lineWidth: 0.5,
+          halign: 'center',
+          valign: 'middle',
+          cellPadding: 1
+        },
+        bodyStyles: {
+          lineColor: [0, 0, 0],
+          lineWidth: 0.5,
+          fontSize: 7,
+          cellPadding: 1,
+          valign: 'middle'
+        },
+        alternateRowStyles: {
+          fillColor: [248, 248, 248]
+        },
+        didDrawRow: (data) => {
+          // Style the total row (last row)
+          if (data.row.index === tableData.length - 1) {
+            data.row.cells.forEach(cell => {
+              cell.styles.fillColor = [173, 216, 230] // Light blue background
+              cell.styles.fontStyle = 'bold'
+              cell.styles.textColor = [0, 0, 0]
+            })
+          }
+        },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 12 },
+          1: { halign: 'center', cellWidth: 20 },
+          2: { halign: 'left', cellWidth: 25 },
+          3: { halign: 'right', cellWidth: 18 },
+          4: { halign: 'right', cellWidth: 18 },
+          5: { halign: 'right', cellWidth: 18 },
+          6: { halign: 'right', cellWidth: 22 },
+          7: { halign: 'right', cellWidth: 22 },
+          8: { halign: 'right', cellWidth: 25 }
+        },
+        tableLineColor: [0, 0, 0],
+        tableLineWidth: 0.5,
+        margin: { top: 110, left: 5, right: 5 },
+        pageBreak: 'auto',
+        rowPageBreak: 'avoid',
+        showHead: 'everyPage'
+      })
+    } else {
+      doc.setFontSize(12)
+      doc.text('No transactions found for this buyer.', 20, 120)
+    }
+    
+    // Footer
+    const pageCount = doc.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      doc.setFontSize(8)
+      doc.text(`Page ${i} of ${pageCount}`, 105, 285, { align: 'center' })
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 285)
+    }
+    
+    // Save the PDF
+    doc.save(`${buyer.name.replace(/\s+/g, '_')}_Transaction_Report.pdf`)
+    setPdfGenerating(false)
+  }
+
+  if (loading && buyers.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-gray-600">Loading buyers...</div>
+      </div>
+    )
+  }
+
+  if (error && buyers.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-red-600">
+          <div>{error}</div>
+          <div className="text-sm text-gray-500 mt-2">Check browser console for details</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!loading && buyers.length === 0 && !error) {
+    return (
+      <div className="space-y-6 font-poppins">
+        {/* Page header */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Buyer Management</h1>
+          <p className="text-gray-600 mt-2">View and manage all buyer information and transactions</p>
+        </div>
+
+        {/* Empty state */}
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="text-lg text-gray-500 mb-2">No buyers found</div>
+            <div className="text-sm text-gray-400">Connect to Google Sheets to view buyer data</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 font-poppins">
@@ -196,34 +446,53 @@ const BuyerData = () => {
                 <div className="mb-3">
                   <h3 className="font-medium text-gray-900 text-lg group-hover:text-gray-800 transition-colors duration-200 truncate">{buyer.name}</h3>
                 </div>
-
                 {/* Stats Grid - Compact */}
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   <div className="bg-gray-50 rounded-md p-2 group-hover:bg-gray-100 transition-colors duration-200">
                     <div className="text-xs text-gray-500 font-medium">Weight</div>
-                    <div className="text-sm font-bold text-gray-900">{buyer.totalWeight} kg</div>
+                    <div className="text-sm font-bold text-gray-900">{buyer.totalweight || buyer.totalWeight} kg</div>
                   </div>
                   <div className="bg-red-50 rounded-md p-2 group-hover:bg-red-100 transition-colors duration-200">
                     <div className="text-xs text-red-600 font-medium">Debit</div>
-                    <div className="text-sm font-bold text-red-800">₹{buyer.totalDebit.toLocaleString()}</div>
+                    <div className="text-sm font-bold text-red-800">₹{(buyer.totaldebit || buyer.totalDebit)?.toLocaleString()}</div>
                   </div>
                   <div className="bg-green-50 rounded-md p-2 group-hover:bg-green-100 transition-colors duration-200">
                     <div className="text-xs text-green-600 font-medium">Credit</div>
-                    <div className="text-sm font-bold text-green-800">₹{buyer.totalCredit.toLocaleString()}</div>
+                    <div className="text-sm font-bold text-green-800">₹{(buyer.totalcredit || buyer.totalCredit)?.toLocaleString()}</div>
                   </div>
                   <div className="bg-blue-50 rounded-md p-2 group-hover:bg-blue-100 transition-colors duration-200">
                     <div className="text-xs text-blue-600 font-medium">Balance</div>
-                    <div className="text-sm font-bold text-blue-800">₹{buyer.balance.toLocaleString()}</div>
+                    <div className="text-sm font-bold text-blue-800">₹{buyer.balance?.toLocaleString()}</div>
                   </div>
                 </div>
 
                 {/* Footer - Compact */}
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                   <span className="text-xs text-gray-500 font-medium">View Details</span>
-                  <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-gray-200 transition-colors duration-200">
-                    <svg className="w-2.5 h-2.5 text-gray-600 group-hover:text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        generatePDF(buyer)
+                      }}
+                      disabled={pdfGenerating}
+                      className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={pdfGenerating ? "Generating PDF..." : "Download PDF"}
+                    >
+                      {pdfGenerating ? (
+                        <svg className="w-3 h-3 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : (
+                        <ArrowDownTrayIcon className="w-3 h-3 text-blue-600" />
+                      )}
+                    </button>
+                    <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-gray-200 transition-colors duration-200">
+                      <svg className="w-2.5 h-2.5 text-gray-600 group-hover:text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -250,29 +519,52 @@ const BuyerData = () => {
                     Transaction Details - {selectedBuyer.name}
                   </h2>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => generatePDF(selectedBuyer)}
+                    disabled={pdfGenerating}
+                    className="flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={pdfGenerating ? "Generating PDF..." : "Download PDF Report"}
+                  >
+                    {pdfGenerating ? (
+                      <>
+                        <svg className="w-4 h-4 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <ArrowDownTrayIcon className="w-4 h-4 mr-1" />
+                        Download PDF
+                      </>
+                    )}
+                  </button>
                 <button
                   onClick={() => setSelectedBuyer(null)}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <XMarkIcon className="w-5 h-5" />
                 </button>
+                </div>
               </div>
               <div className="mt-2 grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                 <div className="bg-blue-50 p-3 rounded-lg">
                   <div className="text-blue-600 font-medium">Total Weight</div>
-                  <div className="text-lg font-bold text-blue-800">{selectedBuyer.totalWeight} kg</div>
+                  <div className="text-lg font-bold text-blue-800">{selectedBuyer.totalweight || selectedBuyer.totalWeight} kg</div>
                 </div>
                 <div className="bg-green-50 p-3 rounded-lg">
                   <div className="text-green-600 font-medium">Total Debit</div>
-                  <div className="text-lg font-bold text-green-800">₹{selectedBuyer.totalDebit.toLocaleString()}</div>
+                  <div className="text-lg font-bold text-green-800">₹{(selectedBuyer.totaldebit || selectedBuyer.totalDebit)?.toLocaleString()}</div>
                 </div>
                 <div className="bg-yellow-50 p-3 rounded-lg">
                   <div className="text-yellow-600 font-medium">Total Credit</div>
-                  <div className="text-lg font-bold text-yellow-800">₹{selectedBuyer.totalCredit.toLocaleString()}</div>
+                  <div className="text-lg font-bold text-yellow-800">₹{(selectedBuyer.totalcredit || selectedBuyer.totalCredit)?.toLocaleString()}</div>
                 </div>
                 <div className="bg-purple-50 p-3 rounded-lg">
                   <div className="text-purple-600 font-medium">Balance</div>
-                  <div className="text-lg font-bold text-purple-800">₹{selectedBuyer.balance.toLocaleString()}</div>
+                  <div className="text-lg font-bold text-purple-800">₹{selectedBuyer.balance?.toLocaleString()}</div>
                 </div>
               </div>
             </div>
@@ -280,7 +572,7 @@ const BuyerData = () => {
              {/* Transaction Table - Ledger Style */}
              <div className="overflow-x-auto">
                <div className="bg-gray-100 px-4 py-2 border-b border-gray-300">
-                 <h3 className="text-2xl font-normal uppercase  text-gray-800 text-center"> {selectedBuyer.name}</h3>
+                <h3 className="text-2xl font-normal uppercase  text-gray-800 text-center"> {selectedBuyer.name}</h3>
                </div>
                <table className="min-w-full border border-gray-300">
                  <thead className="bg-gray-200">
@@ -297,22 +589,45 @@ const BuyerData = () => {
                    </tr>
                  </thead>
                  <tbody className="bg-white">
-                   {buyerTransactions[selectedBuyer.id]?.map((transaction, index) => (
+                  {buyerTransactions.map((transaction, index) => (
                      <tr key={index} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50`}>
-                       <td className="px-3 py-2 text-sm text-gray-900 border border-gray-300 text-center">{index + 1}</td>
+                      <td className="px-3 py-2 text-sm text-gray-900 border border-gray-300 text-center">{transaction.sno || index + 1}</td>
                        <td className="px-3 py-2 text-sm text-gray-900 border border-gray-300">{transaction.date}</td>
                        <td className="px-3 py-2 text-sm text-gray-900 border border-gray-300 font-medium">{transaction.particulars}</td>
                        <td className="px-3 py-2 text-sm text-gray-900 border border-gray-300 text-right">{transaction.weight || ''}</td>
-                       <td className="px-3 py-2 text-sm text-gray-900 border border-gray-300 text-right">{transaction.inrPerKg || ''}</td>
-                       <td className="px-3 py-2 text-sm text-gray-900 border border-gray-300 text-right">{transaction.autoRent || ''}</td>
+                      <td className="px-3 py-2 text-sm text-gray-900 border border-gray-300 text-right">{transaction.particulars === 'RECEIPT' ? '' : (transaction.inrkg || transaction.inrPerKg || transaction.inr_per_kg || '95')}</td>
+                      <td className="px-3 py-2 text-sm text-gray-900 border border-gray-300 text-right">{transaction.autorent || transaction.autoRent || ''}</td>
                        <td className="px-3 py-2 text-sm text-gray-900 border border-gray-300 text-right font-medium">{transaction.debit || ''}</td>
                        <td className="px-3 py-2 text-sm text-gray-900 border border-gray-300 text-right font-medium">{transaction.credit || ''}</td>
-                       <td className="px-3 py-2 text-sm text-gray-900 border border-gray-300 text-right font-bold">{transaction.balance}</td>
+                      <td className="px-3 py-2 text-sm text-gray-900 border border-gray-300 text-right font-bold">{transaction.bal || transaction.balance}</td>
                      </tr>
                    )) || (
                      <tr>
                        <td colSpan="9" className="px-6 py-4 text-center text-sm text-gray-500 border border-gray-300">
-                         No transactions found for this buyer
+                          {loading ? 'Loading transactions...' : 'No transactions found for this buyer'}
+                       </td>
+                     </tr>
+                   )}
+                   
+                   {/* Total Row */}
+                   {buyerTransactions && buyerTransactions.length > 0 && (
+                     <tr className="bg-blue-100 border-t-2 border-blue-300">
+                       <td className="px-3 py-2 text-sm font-bold text-gray-900 border border-gray-300 text-center" colSpan="3">TOTAL</td>
+                       <td className="px-3 py-2 text-sm font-bold text-gray-900 border border-gray-300 text-right">
+                         {buyerTransactions.reduce((sum, transaction) => sum + (parseFloat(transaction.weight) || 0), 0).toFixed(1)} kg
+                       </td>
+                       <td className="px-3 py-2 text-sm font-bold text-gray-900 border border-gray-300 text-right">-</td>
+                       <td className="px-3 py-2 text-sm font-bold text-gray-900 border border-gray-300 text-right">
+                         {buyerTransactions.reduce((sum, transaction) => sum + (parseFloat(transaction.autorent || transaction.autoRent) || 0), 0).toFixed(1)}
+                       </td>
+                       <td className="px-3 py-2 text-sm font-bold text-gray-900 border border-gray-300 text-right">
+                         ₹{buyerTransactions.reduce((sum, transaction) => sum + (parseFloat(transaction.debit) || 0), 0).toLocaleString()}
+                       </td>
+                       <td className="px-3 py-2 text-sm font-bold text-gray-900 border border-gray-300 text-right">
+                         ₹{buyerTransactions.reduce((sum, transaction) => sum + (parseFloat(transaction.credit) || 0), 0).toLocaleString()}
+                       </td>
+                       <td className="px-3 py-2 text-sm font-bold text-blue-800 border border-gray-300 text-right">
+                         ₹{selectedBuyer.balance?.toLocaleString()}
                        </td>
                      </tr>
                    )}

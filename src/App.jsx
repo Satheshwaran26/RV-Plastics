@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard'
 import BuyerData from './components/Buyer-Data'
 import DataEntry from './components/DataEntry'
 import AddBuyer from './components/AddBuyer'
+import PurchaseData from './components/Purchase-Data'
 import Login from './components/Login'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -52,6 +53,13 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <AddBuyer />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchase-data" element={
+              <ProtectedRoute>
+                <Layout>
+                  <PurchaseData />
                 </Layout>
               </ProtectedRoute>
             } />

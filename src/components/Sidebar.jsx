@@ -4,6 +4,7 @@ import {
   ChartBarIcon, 
   PencilSquareIcon,
   UserPlusIcon,
+  ShoppingCartIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline'
 
@@ -36,6 +37,13 @@ const Sidebar = ({ activePage, isOpen, setSidebarOpen }) => {
       icon: UserPlusIcon, 
       description: 'Create New Buyer',
       path: '/add-buyer'
+    },
+    { 
+      id: 'purchase-data', 
+      name: 'Purchase Data', 
+      icon: ShoppingCartIcon, 
+      description: 'Company Purchases',
+      path: '/purchase-data'
     },
   ]
 

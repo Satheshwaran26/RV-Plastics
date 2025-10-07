@@ -29,7 +29,7 @@ const Navbar = ({ setSidebarOpen, sidebarOpen }) => {
               <BuildingOfficeIcon className="w-6 h-6 md:w-8 md:h-8 text-black" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-lg md:text-xl font-medium text-gray-900">RV Plastics</h1>
+              <h1 className="text-lg md:text-xl font-medium text-gray-900">RG Plastics</h1>
               <p className="text-xs md:text-sm text-gray-500 font-medium">Management System</p>
             </div>
           </div>

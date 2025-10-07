@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   PlusIcon,
   XMarkIcon,
@@ -9,6 +9,7 @@ const DataEntry = () => {
   const [formData, setFormData] = useState({
     buyerName: '',
     transactionType: 'SALES',
+    date: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD format for input
     weight: '',
     inrPerKg: '95',
     autoRent: '',
@@ -20,6 +21,7 @@ const DataEntry = () => {
   const [paymentData, setPaymentData] = useState({
     buyerName: '',
     paymentType: 'full',
+    date: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD format for input
     dueAmount: '',
     paidAmount: '',
     paymentMethod: 'cash',
@@ -30,6 +32,39 @@ const DataEntry = () => {
   const [transactionHistory, setTransactionHistory] = useState([])
   const [paymentHistory, setPaymentHistory] = useState([])
   const [activeSection, setActiveSection] = useState('transaction') // 'transaction' or 'payment'
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [buyers, setBuyers] = useState([])
+
+  // Google Apps Script URL
+  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx89vJ41DN0_1u-qxngjETha-YUu3oWddvgi9aF74uyFBnRuYIu7hTj6e5VS7jTMHwa/exec'
+
+  // Fetch buyers from Google Sheets
+  useEffect(() => {
+    const fetchBuyers = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=buyers`)
+        const data = await response.json()
+        
+        if (data && !data.error && data.length > 0) {
+          setBuyers(data)
+          console.log('Fetched buyers from Google Sheets:', data)
+        } else {
+          console.log('No buyers found in Google Sheets')
+          setBuyers([])
+        }
+      } catch (error) {
+        console.error('Error fetching buyers:', error)
+        setError('Failed to fetch buyers from Google Sheets')
+        setBuyers([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchBuyers()
+  }, [])
   
   // Sample buyer data with debit amounts and paid amounts
   const buyerData = [
@@ -64,28 +99,8 @@ const DataEntry = () => {
   ]
   const paymentMethods = ['cash', 'bank_transfer', 'cheque', 'upi', 'card']
   
-  const buyerNames = [
-    'Rajesh Kumar',
-    'Priya Sharma', 
-    'Amit Patel',
-    'Sunita Singh',
-    'Vikram Gupta',
-    'Neha Agarwal',
-    'Ravi Verma',
-    'Kavita Joshi',
-    'Suresh Reddy',
-    'Anita Desai',
-    'Manoj Tiwari',
-    'Deepa Iyer',
-    'Rohit Nair',
-    'Shilpa Rao',
-    'Arjun Mehta',
-    'Pooja Shah',
-    'Kiran Malhotra',
-    'Nitin Chopra',
-    'Rekha Jain',
-    'Gaurav Saxena'
-  ]
+  // Get buyer names from Google Sheets data
+  const buyerNames = buyers.map(buyer => buyer.name)
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -123,20 +138,22 @@ const DataEntry = () => {
       
       // Auto-populate due amount when buyer is selected
       if (name === 'buyerName') {
-        const selectedBuyer = buyerData.find(buyer => buyer.name === value)
+        const selectedBuyer = buyers.find(buyer => buyer.name === value)
         if (selectedBuyer) {
-          newData.dueAmount = Number(selectedBuyer.remaining).toFixed(2)
+          // Use balance as due amount (positive balance means buyer owes money)
+          const dueAmount = Math.max(0, selectedBuyer.balance || 0)
+          newData.dueAmount = Number(dueAmount).toFixed(2)
           // Auto-calculate paid amount based on current payment type
           let paidAmount = 0
           switch (prev.paymentType) {
             case 'full':
-              paidAmount = selectedBuyer.remaining
+              paidAmount = dueAmount
               break
             case 'half':
-              paidAmount = selectedBuyer.remaining * 0.5
+              paidAmount = dueAmount * 0.5
               break
             case 'quarter':
-              paidAmount = selectedBuyer.remaining * 0.25
+              paidAmount = dueAmount * 0.25
               break
             case 'custom':
               paidAmount = prev.paidAmount || 0
@@ -199,73 +216,204 @@ const DataEntry = () => {
     })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     
-    const transaction = {
-      id: Date.now(),
-      date: new Date().toLocaleDateString('en-GB'),
-      buyerName: formData.buyerName,
-      particulars: formData.transactionType,
-      weight: formData.transactionType === 'SALES' ? formData.weight : '',
-      inrPerKg: formData.transactionType === 'SALES' ? formData.inrPerKg : '',
-      autoRent: formData.autoRent || '',
-      debit: formData.transactionType === 'SALES' ? formData.debit : '',
-      credit: formData.transactionType === 'RECEIPT' ? formData.credit : '',
-      balance: 0 // This would be calculated based on previous balance
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Calculate the next serial number (this would ideally come from the sheet)
+      const nextSno = transactionHistory.length + 1
+      
+      // Calculate balance (this is a simplified calculation)
+      const currentBalance = 0 // In a real app, you'd get this from the sheet
+      const newBalance = currentBalance + (parseFloat(formData.debit) || 0) - (parseFloat(formData.credit) || 0)
+      
+      const transaction = {
+        sno: nextSno,
+        date: new Date(formData.date).toLocaleDateString('en-GB'), // Convert to DD/MM/YYYY format
+        particulars: formData.transactionType,
+        weight: formData.transactionType === 'SALES' ? formData.weight : '',
+        inrkg: formData.transactionType === 'SALES' ? formData.inrPerKg : '',
+        autorent: formData.autoRent || '',
+        debit: formData.transactionType === 'SALES' ? formData.debit : '',
+        credit: formData.transactionType === 'RECEIPT' ? formData.credit : '',
+        bal: newBalance
+      }
+      
+      // Send to Google Sheets using JSONP to avoid CORS issues
+      const result = await new Promise((resolve, reject) => {
+        const callbackName = `handleTransactionResult_${Date.now()}`
+        
+        // Create the transaction data as URL parameters
+        const params = new URLSearchParams({
+          action: 'addTransaction',
+          buyerName: formData.buyerName,
+          callback: callbackName,
+          ...transaction
+        })
+        
+        // Create script tag for JSONP
+        const script = document.createElement('script')
+        script.src = `${GOOGLE_SCRIPT_URL}?${params.toString()}`
+        
+        script.onerror = () => {
+          reject(new Error('Failed to add transaction'))
+          document.head.removeChild(script)
+        }
+        
+        // Global callback function
+        window[callbackName] = (data) => {
+          resolve(data)
+          document.head.removeChild(script)
+          delete window[callbackName]
+        }
+        
+        document.head.appendChild(script)
+      })
+      
+      if (result.success) {
+        console.log('Transaction added to Google Sheets:', result)
+        
+        // Add to local history for immediate display
+        setTransactionHistory(prev => [...prev, {
+          id: Date.now(),
+          ...transaction
+        }])
+        
+        setShowSuccess(true)
+        setFormData({
+          buyerName: '',
+          transactionType: 'SALES',
+          date: new Date().toLocaleDateString('en-CA'),
+          weight: '',
+          inrPerKg: '95',
+          autoRent: '',
+          debit: '',
+          credit: '',
+          particulars: 'SALES'
+        })
+        
+        // Refresh buyers data to get updated totals
+        const buyersResponse = await fetch(`${GOOGLE_SCRIPT_URL}?action=buyers`)
+        const buyersData = await buyersResponse.json()
+        if (buyersData && !buyersData.error) {
+          setBuyers(buyersData)
+        }
+        
+        setTimeout(() => setShowSuccess(false), 3000)
+      } else {
+        throw new Error(result.error || 'Failed to add transaction')
+      }
+    } catch (error) {
+      console.error('Error adding transaction:', error)
+      setError(`Failed to add transaction: ${error.message}`)
+    } finally {
+      setLoading(false)
     }
-    
-    setTransactionHistory(prev => [...prev, transaction])
-    setShowSuccess(true)
-    setFormData({
-      buyerName: '',
-      transactionType: 'SALES',
-      weight: '',
-      inrPerKg: '95',
-      autoRent: '',
-      debit: '',
-      credit: '',
-      particulars: 'SALES'
-    })
-    setTimeout(() => setShowSuccess(false), 3000)
   }
 
-  const handlePaymentSubmit = (e) => {
+  const handlePaymentSubmit = async (e) => {
     e.preventDefault()
     
-    const dueAmount = parseFloat(paymentData.dueAmount) || 0
-    const paidAmount = parseFloat(paymentData.paidAmount) || 0
-    const remainingAmount = dueAmount - paidAmount
-    
-    const payment = {
-      id: Date.now(),
-      date: new Date().toLocaleDateString('en-GB'),
-      buyerName: paymentData.buyerName,
-      paymentType: paymentData.paymentType,
-      dueAmount: dueAmount,
-      paidAmount: paidAmount,
-      remainingAmount: remainingAmount,
-      paymentMethod: paymentData.paymentMethod,
-      notes: paymentData.notes,
-      status: remainingAmount === 0 ? 'Paid' : remainingAmount > 0 ? 'Partial' : 'Overpaid'
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const dueAmount = parseFloat(paymentData.dueAmount) || 0
+      const paidAmount = parseFloat(paymentData.paidAmount) || 0
+      const remainingAmount = dueAmount - paidAmount
+      
+      // Create a RECEIPT transaction for the payment
+      const paymentTransaction = {
+        sno: transactionHistory.length + 1,
+        date: new Date(paymentData.date).toLocaleDateString('en-GB'), // Convert to DD/MM/YYYY format
+        particulars: 'RECEIPT',
+        weight: '',
+        inrkg: '',
+        autorent: '',
+        debit: '',
+        credit: paidAmount.toString(),
+        bal: 0 // This will be calculated by the Google Apps Script
+      }
+      
+      // Send payment as a RECEIPT transaction to Google Sheets using JSONP
+      const result = await new Promise((resolve, reject) => {
+        const callbackName = `handlePaymentResult_${Date.now()}`
+        
+        // Create the payment transaction data as URL parameters
+        const params = new URLSearchParams({
+          action: 'addTransaction',
+          buyerName: paymentData.buyerName,
+          callback: callbackName,
+          ...paymentTransaction
+        })
+        
+        // Create script tag for JSONP
+        const script = document.createElement('script')
+        script.src = `${GOOGLE_SCRIPT_URL}?${params.toString()}`
+        
+        script.onerror = () => {
+          reject(new Error('Failed to record payment'))
+          document.head.removeChild(script)
+        }
+        
+        // Global callback function
+        window[callbackName] = (data) => {
+          resolve(data)
+          document.head.removeChild(script)
+          delete window[callbackName]
+        }
+        
+        document.head.appendChild(script)
+      })
+      
+      if (result.success) {
+        console.log('Payment recorded in Google Sheets:', result)
+        
+        const payment = {
+          id: Date.now(),
+          date: new Date().toLocaleDateString('en-GB'),
+          buyerName: paymentData.buyerName,
+          paymentType: paymentData.paymentType,
+          dueAmount: dueAmount,
+          paidAmount: paidAmount,
+          remainingAmount: remainingAmount,
+          paymentMethod: paymentData.paymentMethod,
+          notes: paymentData.notes,
+          status: remainingAmount === 0 ? 'Paid' : remainingAmount > 0 ? 'Partial' : 'Overpaid'
+        }
+        
+        setPaymentHistory(prev => [...prev, payment])
+        setShowPaymentSuccess(true)
+        
+        // Refresh buyers data to get updated totals
+        const buyersResponse = await fetch(`${GOOGLE_SCRIPT_URL}?action=buyers`)
+        const buyersData = await buyersResponse.json()
+        if (buyersData && !buyersData.error) {
+          setBuyers(buyersData)
+        }
+        
+        setPaymentData({
+          buyerName: '',
+          paymentType: 'full',
+          date: new Date().toLocaleDateString('en-CA'),
+          dueAmount: '',
+          paidAmount: '',
+          paymentMethod: 'cash',
+          notes: ''
+        })
+        setTimeout(() => setShowPaymentSuccess(false), 3000)
+      } else {
+        throw new Error(result.error || 'Failed to record payment')
+      }
+    } catch (error) {
+      console.error('Error recording payment:', error)
+      setError(`Failed to record payment: ${error.message}`)
+    } finally {
+      setLoading(false)
     }
-    
-    setPaymentHistory(prev => [...prev, payment])
-    setShowPaymentSuccess(true)
-    
-    // Update buyer data (in a real app, this would update the database)
-    // For now, we'll just show success message
-    console.log(`Payment recorded for ${paymentData.buyerName}: ₹${paidAmount}`)
-    
-    setPaymentData({
-      buyerName: '',
-      paymentType: 'full',
-      dueAmount: '',
-      paidAmount: '',
-      paymentMethod: 'cash',
-      notes: ''
-    })
-    setTimeout(() => setShowPaymentSuccess(false), 3000)
   }
 
   return (
@@ -327,6 +475,14 @@ const DataEntry = () => {
         </div>
       )}
 
+      {/* Error message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center">
+          <XMarkIcon className="w-5 h-5 text-red-600 mr-2" />
+          <span className="text-red-800 font-medium">{error}</span>
+        </div>
+      )}
+
       {/* Transaction Entry Form */}
       {activeSection === 'transaction' && (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -372,6 +528,21 @@ const DataEntry = () => {
                     <option key={type} value={type}>{type}</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Transaction Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Transaction Date *
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
 
               {/* Weight - Only for SALES */}
@@ -471,6 +642,7 @@ const DataEntry = () => {
                 onClick={() => setFormData({
                   buyerName: '',
                   transactionType: 'SALES',
+                  date: new Date().toLocaleDateString('en-CA'),
                   weight: '',
                   inrPerKg: '95',
                   autoRent: '',
@@ -484,10 +656,23 @@ const DataEntry = () => {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center"
+                disabled={loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <PlusIcon className="w-4 h-4 mr-2" />
-                Add Transaction
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <PlusIcon className="w-4 h-4 mr-2" />
+                    Add Transaction
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -511,25 +696,25 @@ const DataEntry = () => {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h3 className="text-sm font-medium text-blue-900 mb-3">Buyer Information</h3>
                   {(() => {
-                    const selectedBuyer = buyerData.find(buyer => buyer.name === paymentData.buyerName)
+                    const selectedBuyer = buyers.find(buyer => buyer.name === paymentData.buyerName)
                     if (selectedBuyer) {
                       return (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                           <div>
                             <span className="text-blue-700 font-medium">Total Debit:</span>
-                            <span className="ml-2 text-blue-900">₹{selectedBuyer.totalDebit.toLocaleString()}</span>
+                            <span className="ml-2 text-blue-900">₹{(selectedBuyer.totaldebit || selectedBuyer.totalDebit || 0).toLocaleString()}</span>
                           </div>
                           <div>
-                            <span className="text-blue-700 font-medium">Already Paid:</span>
-                            <span className="ml-2 text-green-600">₹{selectedBuyer.totalPaid.toLocaleString()}</span>
+                            <span className="text-blue-700 font-medium">Total Credit:</span>
+                            <span className="ml-2 text-green-600">₹{(selectedBuyer.totalcredit || selectedBuyer.totalCredit || 0).toLocaleString()}</span>
                           </div>
                           <div>
-                            <span className="text-blue-700 font-medium">Remaining:</span>
+                            <span className="text-blue-700 font-medium">Balance:</span>
                             <span className={`ml-2 font-bold ${
-                              selectedBuyer.remaining === 0 ? 'text-green-600' : 
-                              selectedBuyer.remaining > 0 ? 'text-red-600' : 'text-blue-600'
+                              selectedBuyer.balance === 0 ? 'text-green-600' : 
+                              selectedBuyer.balance > 0 ? 'text-red-600' : 'text-blue-600'
                             }`}>
-                              ₹{selectedBuyer.remaining.toLocaleString()}
+                              ₹{(selectedBuyer.balance || 0).toLocaleString()}
                             </span>
                           </div>
                         </div>
@@ -577,6 +762,21 @@ const DataEntry = () => {
                     <option key={type.value} value={type.value}>{type.label}</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Payment Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Date *
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  value={paymentData.date}
+                  onChange={handlePaymentInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
 
               {/* Due Amount */}
@@ -684,6 +884,7 @@ const DataEntry = () => {
                 onClick={() => setPaymentData({
                   buyerName: '',
                   paymentType: 'full',
+                  date: new Date().toLocaleDateString('en-CA'),
                   dueAmount: '',
                   paidAmount: '',
                   paymentMethod: 'cash',
@@ -695,10 +896,23 @@ const DataEntry = () => {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center"
+                disabled={loading}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <CheckIcon className="w-4 h-4 mr-2" />
-                Record Payment
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Recording...
+                  </>
+                ) : (
+                  <>
+                    <CheckIcon className="w-4 h-4 mr-2" />
+                    Record Payment
+                  </>
+                )}
               </button>
             </div>
           </form>
