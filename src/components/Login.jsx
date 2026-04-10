@@ -109,8 +109,6 @@ const Login = () => {
                 />
               </div>
             </div>
-
-            {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
