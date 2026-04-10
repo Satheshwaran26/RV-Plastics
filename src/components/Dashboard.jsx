@@ -53,13 +53,13 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Page header */}
+
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600 mt-2">Welcome to RV Plastics management system</p>
       </div>
 
-      {/* Stats grid */}
+  
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {stats.map((stat) => {
           const Icon = stat.icon
