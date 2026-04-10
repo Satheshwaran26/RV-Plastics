@@ -36,7 +36,6 @@ const Login = () => {
     setIsLoading(true)
     setError('')
 
-    // Simulate login process
     try {
       // Add your authentication logic here
       await new Promise(resolve => setTimeout(resolve, 1000))
